@@ -10,6 +10,8 @@ BOT_TOKEN = os.environ['BOT_TOKEN']
 
 def phone_to_wame_link(phone):
     formatted_phone_number = ''.join([c for c in phone if c.isnumeric()])
+    if formatted_phone_number.startswith("8") and len(formatted_phone_number) == 11:
+        formatted_phone_number = formatted_phone_number.replace('8', '7', 1)
     result = f'https://wa.me/{formatted_phone_number}'
     return result
 
