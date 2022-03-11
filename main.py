@@ -1,26 +1,53 @@
 import os
 import re
 
-from telegram import Bot
+from phonenumbers import parse, NumberParseException
+from telegram import Bot, ParseMode
 from telegram.ext import Dispatcher, Updater, MessageHandler, Filters
 from telegram.update import Update
 
 BOT_TOKEN = os.environ['BOT_TOKEN']
 
 
-def phone_to_wame_link(phone):
-    formatted_phone_number = ''.join([c for c in phone if c.isnumeric()])
-    if formatted_phone_number.startswith("8") and len(formatted_phone_number) == 11:
-        formatted_phone_number = formatted_phone_number.replace('8', '7', 1)
+def phone_to_wame_link(phone: str):
+    try:
+        parsed = parse(phone, None)
+    except NumberParseException:
+        parsed = parse(phone, 'RU')
+
+    formatted_phone_number = f'7{parsed.national_number}'
     result = f'https://wa.me/{formatted_phone_number}'
     return result
+
+
+def phone_to_tme_link(phone: str):
+    try:
+        parsed = parse(phone, None)
+    except NumberParseException:
+        parsed = parse(phone, 'RU')
+
+    formatted_phone_number = f'+7{parsed.national_number}'
+    result = f'https://t.me/{formatted_phone_number}'
+    return result
+
+
+def get_reply_text(phone: str):
+    return f'''Telegram:
+{phone_to_tme_link(phone)}
+
+WhatsApp:
+{phone_to_wame_link(phone)}'''
 
 
 def contact_callback(bot, update):
     message = update.message
     contact = update.effective_message.contact
     phone = contact.phone_number
-    message.reply_text(text=phone_to_wame_link(phone))
+    message.reply_text(
+        text=get_reply_text(phone),
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=None,
+    )
 
 
 def message_handler(bot, update):
@@ -28,7 +55,11 @@ def message_handler(bot, update):
     message_text = message.text
     pattern = r'\+?\d[0-9\s\-\(\)]{7,15}\d'
     for phone in re.findall(pattern, message_text):
-        message.reply_text(text=phone_to_wame_link(phone))
+        message.reply_text(
+            text=get_reply_text(phone),
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=None,
+        )
 
 
 def set_handlers(dispatcher):

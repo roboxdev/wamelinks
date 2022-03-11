@@ -1,1 +1,2 @@
+phonenumbers==8.12.45
 python-telegram-bot==11.1.0
